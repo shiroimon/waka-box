@@ -5,7 +5,8 @@ const { Octokit } = require("@octokit/rest");
 const {
   GIST_ID: gistId,
   GH_TOKEN: githubToken,
-  WAKATIME_API_KEY: wakatimeApiKey
+  WAKATIME_API_KEY: wakatimeApiKey,
+  EXCLUDE_LANGUAGES: excludeLanguages
 } = process.env;
 
 const wakatime = new WakaTimeClient(wakatimeApiKey);
@@ -30,9 +31,17 @@ async function updateGist(stats) {
     console.error(`Unable to get gist\n${error}`);
   }
 
+  const excluded = (excludeLanguages || "")
+    .split(",")
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+  const languages = stats.data.languages.filter(
+    lang => !excluded.includes(lang.name.toLowerCase())
+  );
+
   const lines = [];
-  for (let i = 0; i < Math.min(stats.data.languages.length, 5); i++) {
-    const data = stats.data.languages[i];
+  for (let i = 0; i < Math.min(languages.length, 10); i++) {
+    const data = languages[i];
     const { name, percent, text: time } = data;
 
     const line = [
